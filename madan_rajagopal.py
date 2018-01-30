@@ -24,19 +24,19 @@ object (e.g. a LightCube).
 import asyncio
 from random import *
 import cozmo
-from cozmo.util import degrees, distance_mm
+from cozmo.util import degrees, distance_mm, speed_mmps
 import time
 
 min_num_objects = 1
-forward_speed = 50
+forward_speed = 100
 rotation_speed = 25
 
 
 def find_cubes(robot):
+    robot.say_text('where are you my love').wait_for_completed()
     lookaround = robot.start_behavior(cozmo.behavior.BehaviorTypes.LookAroundInPlace)
-    robot.say_text('where are you my love i cant seem to find you')
     cubes = robot.world.wait_until_observe_num_objects(num=min_num_objects, object_type=cozmo.objects.LightCube,
-                                                       timeout=10)
+                                                       timeout=20)
     robot.set_all_backpack_lights(cozmo.lights.red_light)
     lookaround.stop()
 
@@ -44,8 +44,10 @@ def find_cubes(robot):
 
 
 def find_love(robot):
+    print('Finding cubes...')
     cubes = find_cubes(robot)
     while len(cubes) < min_num_objects:
+        print('retrying...')
         robot.play_anim_trigger(cozmo.anim.Triggers.MajorFail).wait_for_completed()
         cubes = find_cubes(robot)
 
@@ -72,20 +74,25 @@ def find_love(robot):
             robot.drive_wheels(rotation_speed, forward_speed)
             robot.set_all_backpack_lights(cozmo.lights.green_light)
 
-        robot.say_text('yaay  I love you so much')
+        robot.say_text('yaay  I love you so much').wait_for_completed()
         # Wait until the robot spins around the cube
         time.sleep(seconds)
         robot.play_anim_trigger(cozmo.anim.Triggers.MajorWin).wait_for_completed()
 
         if seconds < 8:
-            robot.say_text('ooh that was too short see you later')
+            robot.say_text('ooh that was too short see you later').wait_for_completed()
 
         # Random direction
         speed = randint(30, 100)
+        print('Turning blue lights on')
         robot.set_all_backpack_lights(cozmo.lights.blue_light)
+        print('Random Rotation..')
         robot.drive_wheels(speed, -1 * speed)
         time.sleep(randint(2, 5))  # Wait until new direction found
-        robot.drive_straight(randint(50, 100), randint(50, 100)).wait_for_completed()
+        print('Driving straint')
+        robot.drive_wheels(0,0)
+        robot.drive_straight(distance_mm(randint(50, 200)), speed_mmps(randint(50, 200))).wait_for_completed()
+        print('Turning lights off')
         robot.set_all_backpack_lights(cozmo.lights.off_light)
 
 
